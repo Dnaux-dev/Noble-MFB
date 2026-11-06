@@ -7,8 +7,9 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { PayoutsModule } from './payouts/payouts.module';
 import { LedgerModule } from './ledger/ledger.module';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [DatabaseModule, HealthModule, MembershipsModule, WebhooksModule, PayoutsModule, LedgerModule, UsersModule],
+  imports: [DatabaseModule, HealthModule, MembershipsModule, WebhooksModule, PayoutsModule, LedgerModule, UsersModule, AuthModule],
 })
 export class AppModule {}

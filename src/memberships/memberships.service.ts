@@ -201,7 +201,7 @@ export class MembershipsService {
         }
     }
 
-    async findOne(id: string) {
+    async findOne(id: string, userId: string) {
         const result = await this.pool.query(
             `SELECT
       m.*,
@@ -210,8 +210,9 @@ export class MembershipsService {
     FROM memberships m
     JOIN groups g ON g.group_id = m.group_id
     JOIN users u ON u.id = m.user_id
-    WHERE m.id = $1`,
-            [id],
+    WHERE m.id = $1
+      AND m.user_id = $2`,
+            [id, userId],
         );
 
         if (result.rowCount === 0) {
@@ -225,11 +226,11 @@ export class MembershipsService {
     }
 
 
-    async findSchedule(id: string, asOf?: string) {
+    async findSchedule(id: string, userId: string, asOf?: string) {
         // 1. Retrieve the membership.
         const membershipResult = await this.pool.query(
-            `SELECT * FROM memberships WHERE id = $1`,
-            [id],
+            `SELECT * FROM memberships WHERE id = $1 AND user_id = $2`,
+            [id, userId],
         );
 
         if (membershipResult.rowCount === 0) {
