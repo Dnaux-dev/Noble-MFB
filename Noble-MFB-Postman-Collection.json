@@ -1,0 +1,454 @@
+{
+  "info": {
+    "_postman_id": "7d53f5a4-1c7e-4a3d-9c8a-3d7c9e6f4b21",
+    "name": "Noble MFB API",
+    "description": "Live API collection for Noble MFB. Set the baseUrl environment variable, register or log in, then use the automatically stored JWT token for protected requests. Monetary amounts are in kobo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://noble-mfb-api.onrender.com"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "membershipId",
+      "value": ""
+    },
+    {
+      "key": "providerRef",
+      "value": "NOBLE-POSTMAN-INFLOW-001"
+    },
+    {
+      "key": "idempotencyKey",
+      "value": "noble-postman-payout-001"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Database health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Checks API-to-PostgreSQL connectivity. Expected status: 200.",
+            "url": {
+              "raw": "{{baseUrl}}/health/database",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "database"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Database status is ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users & Authentication",
+      "item": [
+        {
+          "name": "Register user",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "description": "Creates a user. Email must be unique; password must be 8\u201372 characters.",
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman.user@example.com\",\n  \"full_name\": \"Postman Test User\",\n  \"password\": \"ChangeMe123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('User created', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201 && pm.response.json().user) { pm.environment.set('userId', pm.response.json().user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "description": "Authenticates a registered user. On success, stores access_token as the accessToken environment variable.",
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman.user@example.com\",\n  \"password\": \"ChangeMe123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login successful', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201 && pm.response.json().access_token) { pm.environment.set('accessToken', pm.response.json().access_token); }",
+                  "if (pm.response.code === 201 && pm.response.json().user) { pm.environment.set('userId', pm.response.json().user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Returns the profile associated with the bearer token.",
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Profile returned', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Memberships",
+      "item": [
+        {
+          "name": "Create weekly Ajo membership",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "description": "Creates a membership for the authenticated user. Change user_id to the userId saved after login. g-ajo minimum is 100000 kobo (\u20a61,000). Weekly frequency requires weekday (1\u20137).",
+            "url": {
+              "raw": "{{baseUrl}}/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "memberships"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"group_id\": \"g-ajo\",\n  \"frequency\": \"weekly\",\n  \"cycle\": \"monthly\",\n  \"contribution_kobo\": 100000,\n  \"weekday\": 5,\n  \"joined_on\": \"2026-11-07\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Membership created', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201 && pm.response.json().membership) { pm.environment.set('membershipId', pm.response.json().membership.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get membership",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Returns a membership belonging to the authenticated user.",
+            "url": {
+              "raw": "{{baseUrl}}/memberships/{{membershipId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "memberships",
+                "{{membershipId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get contribution schedule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Returns the generated contribution schedule and payment allocation as of the supplied date. Remove as_of to use the current Lagos date.",
+            "url": {
+              "raw": "{{baseUrl}}/memberships/{{membershipId}}/schedule?as_of=2026-11-07",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "memberships",
+                "{{membershipId}}",
+                "schedule?as_of=2026-11-07"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inflows (Webhook)",
+      "item": [
+        {
+          "name": "Record contribution inflow",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "description": "Records a provider inflow. provider_ref is the idempotency reference: replaying the same reference and payload returns the existing inflow; a different membership or amount with the same reference creates a conflict. This endpoint is currently public (no webhook signature/auth guard).",
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/inflows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                "inflows"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider_ref\": \"{{providerRef}}\",\n  \"membership_id\": \"{{membershipId}}\",\n  \"amount_kobo\": 100000,\n  \"received_at\": \"2026-11-07T12:00:00+01:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inflow accepted or replayed', () => pm.expect([201, 200]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Payouts",
+      "item": [
+        {
+          "name": "Request membership payout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "description": "Requests the membership payout. Requires bearer authentication and an Idempotency-Key header. Payout is available only after the membership cycle ends and when savings are available.",
+            "url": {
+              "raw": "{{baseUrl}}/memberships/{{membershipId}}/payout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "memberships",
+                "{{membershipId}}",
+                "payout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ledger",
+      "item": [
+        {
+          "name": "Get trial balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Returns account balances and aggregate debit/credit totals. is_balanced should be true when the ledger balances.",
+            "url": {
+              "raw": "{{baseUrl}}/ledger/trial-balance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ledger",
+                "trial-balance"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Trial balance returned', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

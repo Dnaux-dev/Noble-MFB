@@ -1,0 +1,45 @@
+{
+  "id": "0d4a3bb9-9d3a-4f5e-8e13-0c1f6a8a9d20",
+  "name": "Noble MFB - Production",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://noble-mfb-api.onrender.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "membershipId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "providerRef",
+      "value": "NOBLE-POSTMAN-INFLOW-001",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "idempotencyKey",
+      "value": "noble-postman-payout-001",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-11-07T13:00:00.000Z",
+  "_postman_exported_using": "ChatGPT"
+}
