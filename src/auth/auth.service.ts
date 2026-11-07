@@ -12,6 +12,8 @@ export class AuthService {
   constructor(
     @Inject('PG_POOL')
     private readonly pool: Pool,
+
+    @Inject('JWT_SERVICE')
     private readonly jwtService: JwtService,
   ) { }
 
